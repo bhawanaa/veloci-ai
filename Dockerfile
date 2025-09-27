@@ -35,5 +35,6 @@ COPY patched_edge_tts/ patched_edge_tts/
 ENV PYTHONPATH=/app
 
 EXPOSE 8000
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080"]
+
 
