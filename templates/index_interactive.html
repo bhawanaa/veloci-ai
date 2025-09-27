@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Veloci AI - Interactive Chat</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <style>
+        body {
+            background: #f8fdff;
+            background-image:
+                radial-gradient(ellipse at top left, rgba(255, 154, 86, 0.12) 0%, transparent 60%),
+                radial-gradient(ellipse at top right, rgba(116, 185, 255, 0.15) 0%, transparent 60%),
+                radial-gradient(ellipse at bottom left, rgba(255, 119, 48, 0.08) 0%, transparent 70%),
+                radial-gradient(ellipse at bottom right, rgba(52, 152, 219, 0.1) 0%, transparent 70%),
+                linear-gradient(135deg, rgba(255, 154, 86, 0.05) 0%, rgba(116, 185, 255, 0.08) 50%, rgba(255, 119, 48, 0.03) 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .chat-container {
+            max-width: 1000px;
+            margin: 20px auto;
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(255, 154, 86, 0.15);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(255, 154, 86, 0.1), 0 10px 20px rgba(116, 185, 255, 0.08);
+            backdrop-filter: blur(15px);
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, rgba(255, 154, 86, 0.9) 0%, rgba(116, 185, 255, 0.8) 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-logo {
+            height: 40px;
+            width: auto;
+            margin-right: 15px;
+            filter: drop-shadow(0 2px 6px rgba(255, 154, 86, 0.4)) drop-shadow(0 0 8px rgba(116, 185, 255, 0.2));
+            transition: all 0.3s ease;
+            animation: subtle-float 6s ease-in-out infinite;
+        }
+
+        .header-logo:hover {
+            transform: scale(1.05);
+            filter: drop-shadow(0 4px 12px rgba(102, 126, 234, 0.6));
+        }
+
+        @keyframes subtle-float {
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-2px);
+            }
+        }
+
+        .chat-header h1 {
+            margin: 0;
+            font-size: 2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+
+        .status-indicator {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.2);
+                opacity: 0.7;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .chat-body {
+            display: flex;
+            height: 70vh;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-y: auto;
+            backdrop-filter: blur(10px);
+        }
+
+        .main-chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.1);
+            color: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            text-align: right;
+        }
+
+        .message.ai {
+            text-align: left;
+        }
+
+        .message-bubble {
+            display: inline-block;
+            max-width: 70%;
+            padding: 15px 20px;
+            border-radius: 20px;
+            word-wrap: break-word;
+            position: relative;
+        }
+
+        .message.user .message-bubble {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .message.ai .message-bubble {
+            background: rgba(255, 255, 255, 0.1);
+            color: #f8f9fa;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+
+        .input-section {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .input-group-custom {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .message-input {
+            flex: 1;
+            border: 2px solid rgba(255, 154, 86, 0.25);
+            border-radius: 25px;
+            padding: 15px 20px;
+            font-size: 16px;
+            resize: none;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+            color: #2c3e50;
+            backdrop-filter: blur(10px);
+        }
+
+        .message-input::placeholder {
+            color: rgba(44, 62, 80, 0.6);
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: rgba(255, 154, 86, 0.6);
+            box-shadow: 0 0 0 3px rgba(116, 185, 255, 0.15);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-circle:hover {
+            transform: scale(1.1);
+        }
+
+        .conversation-mode {
+            margin-bottom: 20px;
+        }
+
+        .btn-gradient {
+            background: linear-gradient(135deg, rgba(255, 154, 86, 0.9) 0%, rgba(116, 185, 255, 0.8) 100%);
+            border: none;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 154, 86, 0.3);
+        }
+
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 154, 86, 0.4), 0 4px 15px rgba(116, 185, 255, 0.3);
+            color: white;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 10px 20px;
+            background: #e9ecef;
+            border-radius: 20px;
+            margin: 10px 0;
+            width: fit-content;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #007bff;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+
+            0%,
+            60%,
+            100% {
+                transform: translateY(0);
+            }
+
+            30% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .suggestion-chip {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .suggestion-chip:hover {
+            background: #007bff;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .voice-controls {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .voice-select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .speed-slider {
+            flex: 1;
+        }
+
+        .document-stats {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .upload-area {
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #007bff;
+            background: rgba(0, 123, 255, 0.05);
+        }
+
+        .upload-area.dragover {
+            border-color: #28a745;
+            background: rgba(40, 167, 69, 0.1);
+        }
+
+        .recording {
+            animation: recordingPulse 1s infinite;
+        }
+
+        @keyframes recordingPulse {
+            0% {
+                background: #dc3545;
+            }
+
+            50% {
+                background: #fd7e14;
+            }
+
+            100% {
+                background: #dc3545;
+            }
+        }
+
+        .audio-wave {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            gap: 3px;
+            margin: 10px 0;
+            height: 30px;
+            /* Fixed height to prevent layout shift */
+        }
+
+        /* Better speech indicator - subtle pulsing icon */
+        .speech-indicator {
+            display: none;
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            background: linear-gradient(45deg, #007bff, #6f42c1);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
+            z-index: 1000;
+            font-size: 0.85rem;
+            animation: speechGlow 2s infinite;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        @keyframes speechGlow {
+
+            0%,
+            100% {
+                box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
+                transform: scale(1);
+            }
+
+            50% {
+                box-shadow: 0 6px 25px rgba(0, 123, 255, 0.4);
+                transform: scale(1.02);
+            }
+        }
+
+        .speech-indicator i {
+            margin-right: 6px;
+            animation: speakerPulse 1.5s infinite;
+        }
+
+        @keyframes speakerPulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+        }
+
+        /* Alternative: Small audio icon in message */
+        .message-audio-indicator {
+            display: none;
+            color: #007bff;
+            margin-left: 10px;
+            font-size: 0.9rem;
+            animation: audioIcon 1.5s infinite;
+        }
+
+        @keyframes audioIcon {
+
+            0%,
+            100% {
+                opacity: 0.5;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        /* Simple, stable wave bars - no height animation */
+        .wave-bar {
+            width: 4px;
+            height: 20px;
+            background: #007bff;
+            border-radius: 2px;
+            opacity: 0.3;
+            animation: waveOpacity 1.5s infinite;
+        }
+
+        .wave-bar:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .wave-bar:nth-child(3) {
+            animation-delay: 0.2s;
+        }
+
+        .wave-bar:nth-child(4) {
+            animation-delay: 0.3s;
+        }
+
+        .wave-bar:nth-child(5) {
+            animation-delay: 0.4s;
+        }
+
+        /* Opacity animation instead of height - no layout shift */
+        @keyframes waveOpacity {
+
+            0%,
+            100% {
+                opacity: 0.3;
+                transform: scaleY(0.5);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scaleY(1);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="chat-container">
+        <!-- Header -->
+        <div class="chat-header">
+            <h1>
+                <img src="/static/logo.png" alt="Veloci AI Logo" class="header-logo" />
+                Veloci AI
+            </h1>
+            <div class="status-indicator">
+                <span class="status-dot"></span>
+                <small>Online</small>
+            </div>
+        </div>
+
+        <!-- Main Chat Body -->
+        <div class="chat-body">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <!-- Conversation Mode -->
+                <div class="conversation-mode">
+                    <a href="/conversation" class="btn btn-gradient btn-lg mb-3 w-100">
+                        <i class="fas fa-comments me-2"></i>
+                        <strong>Voice Conversation</strong>
+                        <br>
+                        <small>Like iPhone ChatGPT</small>
+                    </a>
+                </div>
+
+                <!-- Voice Controls -->
+                <div class="voice-controls">
+                    <h6><i class="fas fa-volume-up"></i> Voice Settings</h6>
+                    <select class="voice-select" id="voiceSelect">
+                        <option value="9BWtsMINqrJLrRacOk9x">Aria (Female)</option>
+                        <option value="zcAOhNBS3c14rBihAFp1">Adam (Male)</option>
+                        <option value="pNInz6obpgDQGcFmaJgB">Antoni (Male)</option>
+                        <option value="VR6AewLTigWG4xSOukaG">Arnold (Male)</option>
+                        <option value="ErXwobaYiN019PkySvjV">Antoni 2 (Male)</option>
+                    </select>
+                    <div class="speed-control">
+                        <small>Speed:</small>
+                        <input type="range" class="speed-slider" id="speedSlider" min="0.5" max="2" step="0.1"
+                            value="1">
+                        <small id="speedValue">1.0x</small>
+                    </div>
+                    <small class="text-muted" id="voiceStatus">
+                        <i class="fas fa-info-circle"></i> Voice selection active
+                    </small>
+                </div>
+
+                <!-- Document Stats -->
+                <div class="document-stats" id="documentStats">
+                    <h6><i class="fas fa-file-alt"></i> Documents</h6>
+                    <div class="stat-item">
+                        <span>Files:</span>
+                        <strong id="fileCount">0</strong>
+                    </div>
+                    <div class="stat-item">
+                        <span>Total Size:</span>
+                        <strong id="totalSize">0 KB</strong>
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary" id="summaryBtn">
+                        <i class="fas fa-compress-alt"></i> Summarize
+                    </button>
+                </div>
+
+                <!-- Upload Area -->
+                <div class="upload-area" id="uploadArea">
+                    <i class="fas fa-cloud-upload-alt fa-2x mb-2"></i>
+                    <p>Drop files here or click to upload</p>
+                    <input type="file" id="fileInput" style="display: none;" multiple
+                        accept=".pdf,.docx,.txt,.xlsx,.jpg,.jpeg,.png">
+                </div>
+            </div>
+
+            <!-- Main Chat -->
+            <div class="main-chat">
+                <!-- Messages -->
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message ai">
+                        <div class="message-bubble">
+                            <p>Hi! I'm Veloci AI. Upload some documents and start asking questions! 🚀</p>
+                        </div>
+                        <div class="message-time">Just now</div>
+                    </div>
+                </div>
+
+                <!-- Typing Indicator -->
+                <div class="typing-indicator" id="typingIndicator">
+                    <div class="typing-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+
+                <!-- Suggestions -->
+                <div class="suggestions" id="suggestions"></div>
+
+                <!-- Audio Wave -->
+                <div class="audio-wave" id="audioWave">
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                </div>
+
+                <!-- Input Section -->
+                <div class="input-section">
+                    <a href="/chat" class="back-button" id="backToChatBtn"
+                        style="display:inline-block; margin-bottom:12px; color:#007bff; text-decoration:none; font-weight:500;">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Chat
+                    </a>
+                    <div class="input-group-custom">
+                        <textarea class="message-input" id="messageInput" placeholder="Type your message here..."
+                            rows="1"></textarea>
+                        <div class="control-buttons">
+                            <button class="btn btn-outline-secondary btn-circle" id="micBtn" title="Voice Input">
+                                <i class="fas fa-microphone"></i>
+                            </button>
+                            <button class="btn btn-primary btn-circle" id="sendBtn" title="Send Message">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Better Speech Indicator - Fixed Position -->
+    <div class="speech-indicator" id="speechIndicator">
+        <i class="fas fa-volume-up"></i>
+        <span>AI Speaking...</span>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            let isRecording = false;
+            let recognition;
+            let currentAudio = null;
+
+            // Load available voices from the API
+            function loadVoices() {
+                $.ajax({
+                    url: '/voices',
+                    type: 'GET',
+                    success: function (response) {
+                        const voices = response.voices;
+                        const voiceSelect = $('#voiceSelect');
+                        voiceSelect.empty();
+
+                        voices.forEach(voice => {
+                            voiceSelect.append(`<option value="${voice.id}">${voice.name} - ${voice.description}</option>`);
+                        });
+
+                        console.log('✅ Loaded voices:', voices.length);
+                    },
+                    error: function () {
+                        console.log('❌ Failed to load voices, using defaults');
+                    }
+                });
+            }
+
+            // Load voices on page load
+            loadVoices();
+
+            // Initialize speech recognition
+            if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.lang = 'en-US';
+                recognition.interimResults = false;
+                recognition.maxAlternatives = 1;
+                recognition.continuous = false;
+
+                recognition.onresult = function (event) {
+                    const transcript = event.results[0][0].transcript;
+                    $('#messageInput').val(transcript);
+                    sendMessage();
+                };
+
+                recognition.onerror = function (event) {
+                    console.error('Speech recognition error:', event.error);
+                    showToast('Speech recognition error: ' + event.error, 'error');
+                };
+
+                recognition.onend = function () {
+                    isRecording = false;
+                    $('#micBtn').removeClass('recording');
+                    $('#micBtn i').removeClass('fa-stop').addClass('fa-microphone');
+                };
+            }
+
+            // Auto-resize textarea
+            $('#messageInput').on('input', function () {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+
+            // Speed slider
+            $('#speedSlider').on('input', function () {
+                $('#speedValue').text($(this).val() + 'x');
+            });
+
+            // Voice selection feedback
+            $('#voiceSelect').on('change', function () {
+                const selectedVoice = $(this).find('option:selected').text();
+                const selectedId = $(this).val();
+                console.log('🎤 Voice changed to:', selectedVoice);
+                showToast(`Voice changed to: ${selectedVoice}`, 'success');
+
+                // Update status indicator
+                $('#voiceStatus').html(`<i class="fas fa-microphone"></i> Using: ${selectedVoice}`);
+            });
+
+            // Send message on Enter (without Shift)
+            $('#messageInput').keydown(function (event) {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            // Send button click
+            $('#sendBtn').click(sendMessage);
+
+            // Microphone button
+            $('#micBtn').click(function () {
+                if (!recognition) {
+                    showToast('Speech recognition not supported', 'error');
+                    return;
+                }
+
+                if (isRecording) {
+                    recognition.stop();
+                } else {
+                    recognition.start();
+                    isRecording = true;
+                    $(this).addClass('recording');
+                    $(this).find('i').removeClass('fa-microphone').addClass('fa-stop');
+                }
+            });
+
+            // File upload
+            $('#uploadArea').click(() => $('#fileInput').click());
+
+            $('#uploadArea').on('dragover', function (e) {
+                e.preventDefault();
+                $(this).addClass('dragover');
+            });
+
+            $('#uploadArea').on('dragleave', function (e) {
+                e.preventDefault();
+                $(this).removeClass('dragover');
+            });
+
+            $('#uploadArea').on('drop', function (e) {
+                e.preventDefault();
+                $(this).removeClass('dragover');
+                const files = e.originalEvent.dataTransfer.files;
+                uploadFiles(files);
+            });
+
+            $('#fileInput').change(function () {
+                uploadFiles(this.files);
+            });
+
+            // Summary button
+            $('#summaryBtn').click(getSummary);
+
+            // Functions
+            function sendMessage() {
+                const message = $('#messageInput').val().trim();
+                if (!message) return;
+
+                addMessage(message, 'user');
+                $('#messageInput').val('');
+                $('#messageInput').css('height', 'auto');
+
+                showTypingIndicator();
+
+                // Get selected voice and speed from the UI
+                const selectedVoice = $('#voiceSelect').val();
+                const selectedSpeed = $('#speedSlider').val();
+
+                $.ajax({
+                    url: '/ask',
+                    type: 'POST',
+                    data: {
+                        question: message,
+                        voice_id: selectedVoice,
+                        speed: selectedSpeed
+                    },
+                    success: function (response) {
+                        hideTypingIndicator();
+                        addMessage(response.answer, 'ai');
+
+                        if (response.audio_url) {
+                            playAudio(response.audio_url);
+                        }
+
+                        // Show which voice was used (optional)
+                        if (response.voice_used) {
+                            console.log(`🎵 Audio generated with voice: ${response.voice_used}, speed: ${response.speed_used}x`);
+                        }
+
+                        // Get suggestions
+                        getSuggestions(response.answer);
+                    },
+                    error: function (xhr) {
+                        hideTypingIndicator();
+                        const error = xhr.responseJSON?.detail || 'An error occurred';
+                        showToast(error, 'error');
+                    }
+                });
+            }
+
+            function addMessage(text, sender) {
+                const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const audioIndicator = sender === 'ai' ? '<i class="fas fa-volume-up message-audio-indicator" id="msgAudio-' + Date.now() + '"></i>' : '';
+                const messageHtml = `
+                    <div class="message ${sender}">
+                        <div class="message-bubble">
+                            <p>${text}${audioIndicator}</p>
+                        </div>
+                        <div class="message-time">${time}</div>
+                    </div>
+                `;
+                $('#chatMessages').append(messageHtml);
+                $('#chatMessages').scrollTop($('#chatMessages')[0].scrollHeight);
+            }
+
+            function showTypingIndicator() {
+                $('#typingIndicator').show();
+                $('#chatMessages').scrollTop($('#chatMessages')[0].scrollHeight);
+            }
+
+            function hideTypingIndicator() {
+                $('#typingIndicator').hide();
+            }
+
+            function playAudio(audioUrl) {
+                if (currentAudio) {
+                    currentAudio.pause();
+                }
+
+                // Show both indicators - fixed position and in-message
+                $('#speechIndicator').fadeIn(300);
+                $('.message-audio-indicator').last().fadeIn(300);
+
+                currentAudio = new Audio(audioUrl);
+
+                currentAudio.play().catch(error => {
+                    console.error('Audio playback error:', error);
+                    showToast('Audio playback was blocked. Click to enable.', 'warning');
+                    $('#speechIndicator').fadeOut(300);
+                    $('.message-audio-indicator').fadeOut(300);
+                });
+
+                currentAudio.onended = function () {
+                    $('#speechIndicator').fadeOut(300);
+                    $('.message-audio-indicator').fadeOut(300);
+                };
+
+                currentAudio.onerror = function () {
+                    $('#speechIndicator').fadeOut(300);
+                    $('.message-audio-indicator').fadeOut(300);
+                };
+            }
+
+            function uploadFiles(files) {
+                Array.from(files).forEach(file => {
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    $.ajax({
+                        url: '/upload',
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function (response) {
+                            showToast(response.message, 'success');
+                            updateDocumentStats();
+                        },
+                        error: function (xhr) {
+                            const error = xhr.responseJSON?.detail || 'Upload failed';
+                            showToast(error, 'error');
+                        }
+                    });
+                });
+            }
+
+            function updateDocumentStats() {
+                $.ajax({
+                    url: '/documents/stats',
+                    type: 'GET',
+                    success: function (response) {
+                        $('#fileCount').text(response.document_count);
+                        $('#totalSize').text(response.total_size_kb + ' KB');
+                    }
+                });
+            }
+
+            function getSuggestions(lastAnswer) {
+                $.ajax({
+                    url: '/suggest',
+                    type: 'POST',
+                    data: { last_answer: lastAnswer },
+                    success: function (response) {
+                        const suggestions = response.suggestions || [];
+                        const suggestionsHtml = suggestions.map(s =>
+                            `<div class="suggestion-chip" onclick="selectSuggestion('${s.replace(/'/g, "\\'")}')">${s}</div>`
+                        ).join('');
+                        $('#suggestions').html(suggestionsHtml);
+                    }
+                });
+            }
+
+            function getSummary() {
+                $.ajax({
+                    url: '/summarize',
+                    type: 'POST',
+                    success: function (response) {
+                        addMessage(response.summary, 'ai');
+                    },
+                    error: function (xhr) {
+                        const error = xhr.responseJSON?.error || 'Summary failed';
+                        showToast(error, 'error');
+                    }
+                });
+            }
+
+            function showToast(message, type) {
+                // Simple toast notification (you can enhance this)
+                const toast = $(`
+                    <div class="alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'warning'} 
+                         alert-dismissible fade show position-fixed" 
+                         style="top: 20px; right: 20px; z-index: 9999;">
+                        ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `);
+                $('body').append(toast);
+                setTimeout(() => toast.remove(), 5000);
+            }
+
+            // Initialize
+            updateDocumentStats();
+        });
+
+        function selectSuggestion(suggestion) {
+            $('#messageInput').val(suggestion);
+            $('#suggestions').empty();
+        }
+    </script>
+</body>
+
+</html>
